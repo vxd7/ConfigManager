@@ -142,21 +142,24 @@ TOKENTYPE ConfigManager::getKeyType(const std::string &line) {
 
 	keyValue = line.substr(equalSignPos + 1);
 
-	bool containsLetters
-		= std::find_if(keyValue.begin(), keyValue.end(), alpha_test) != keyValue.end();
-	bool containsNums
-		= std::find_if(keyValue.begin(), keyValue.end(), num_test) != keyValue.end();
-	bool containsDot = false;
-	if(keyValue.find('.') != std::string::npos) {
-		containsDot = true;
-	}
-
-	if(containsLetters) {
+	/* Check if there are double quotes present */
+	if((keyValue.find('"') != std::string::npos) && (keyValue.rfind('"') != std::string::npos)) {
 		keyValueType = STRING_VAL;
-	} else if(containsNums && containsDot) {
-		keyValueType = DOUBLE_VAL;
-	} else if(containsNums && !containsDot) {
-		keyValueType = INT_VAL;
+	} else {
+
+		/* If there are no quotes -- continue checkings */
+		bool containsNums
+			= std::find_if(keyValue.begin(), keyValue.end(), num_test) != keyValue.end();
+		bool containsDot = false;
+		if(keyValue.find('.') != std::string::npos) {
+			containsDot = true;
+		}
+
+		if(containsNums && containsDot) {
+			keyValueType = DOUBLE_VAL;
+		} else if(containsNums && !containsDot) {
+			keyValueType = INT_VAL;
+		}
 	}
 
 	return keyValueType;
@@ -173,6 +176,12 @@ std::string getValueLine(const std::string &line) {
 	}
 
 	keyValue = line.substr(equalSignPos + 1);
+
+	size_t firstQuote = keyValue.find('"');
+	size_t lastQuote = keyValue.rfind('"');
+	if((firstQuote != std::string::npos) && (lastQuote != std::string::npos)) {
+		keyValue = keyValue.substr(firstQuote + 1, (lastQuote - firstQuote - 1));
+	}
 
 	return keyValue;
 }
@@ -261,15 +270,28 @@ size_t ConfigManager::searchTokens(const TOKENTYPE &type, const std::string &sec
 
 void ConfigManager::getVal(const TOKENTYPE &type, const std::string &section, const std::string &id, std::string &readData) {
 	size_t index = searchTokens(type, section, id);
-	configFileTokens[index].getTokenData(readData);
+
+	if(index == -1) {
+		//exception here
+	} else {
+		configFileTokens[index].getTokenData(readData);
+	}
 }
 
 void ConfigManager::getVal(const TOKENTYPE &type, const std::string &section, const std::string &id, double &readData) {
 	size_t index = searchTokens(type, section, id);
-	configFileTokens[index].getTokenData(readData);
+	if(index == -1) {
+		//exception here
+	} else {
+		configFileTokens[index].getTokenData(readData);
+	}
 }
 
 void ConfigManager::getVal(const TOKENTYPE &type, const std::string &section, const std::string &id, int &readData) {
 	size_t index = searchTokens(type, section, id);
-	configFileTokens[index].getTokenData(readData);
+	if(index == -1) {
+		//exception here
+	} else {
+		configFileTokens[index].getTokenData(readData);
+	}
 }
