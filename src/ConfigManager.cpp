@@ -275,10 +275,13 @@ void ConfigManager::readConfigFile(const std::string &fileName) {
 	configFile.open(fileName, std::ios::in);
 
 	/* Read the whole file and get section blocks */
-	std::string line; // Line of config file
+	std::string line = ""; // Line of config file
 	std::string sectionName; //Where to store the section name
 	bool inside_section = false; //Are we inside the section?
-	while(std::getline(configFile, line)) {
+
+	std::getline(configFile, line); // Read the first line of a config file
+
+	while(configFile.good()) {
 		std::stringstream sstr;
 
 		if(is_section(line)) {
@@ -287,23 +290,25 @@ void ConfigManager::readConfigFile(const std::string &fileName) {
 
 			/* Get the section block to the stringstream */
 			while(inside_section && configFile.good()) {
-				int pos = configFile.tellg();
 				std::getline(configFile, line);
 
 				if(!is_section(line)) {
 					sstr << line << '\n'; // Append `\n' separator to the stringstream
 				} else {
 					inside_section = false;
-					configFile.seekg(pos, std::ios_base::beg); //Return one line before
 				}
 			}
 
 			Section tmpSect;
 			tmpSect.readSection(sectionName, sstr);
 			configFileSections.push_back(tmpSect);
-		}
 
-	} //readLine
+		} else {
+			/* If it is not a section and we are not inside a section,
+			 * read next lines. Probably there are some garbage lines here */
+			std::getline(configFile, line);
+		}
+	}
 	
 }
 
