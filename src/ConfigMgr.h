@@ -33,6 +33,9 @@ public:
 
 };
 
+/*********************
+ * Main data section *
+ *********************/
 class Section {
 private:
 	std::string sectionName;
@@ -58,8 +61,30 @@ public:
 	
 };
 
-class SpecialSection : public Section {
+/************************
+ * Special data section *
+ ************************/
+class BasicDataSection : public Section {
 private:
+	std::vector<int> neuronsInLayers;
+	std::vector<std::pair<int,int> > mapDims;
+
+	/* Misc functions */
+	std::string getSubstringBetweenBraces(std::string line);
+	std::vector<int> getNumbersInCurlyBraces(std::string line); //{1, 2, 3, 4} --> vector<int> vec = {1, 2, ...}
+
+	/* Main init funcs */
+	bool init_neuronsInLayers(std::string line);
+	bool init_mapDims(std::string line);
+
+public:
+	bool section_full_init = false;
+
+	void readBasicDataSection(std::stringstream& sstr);
+
+	std::vector<int>& getNeuronsInLayers();
+	std::vector<std::pair<int,int>>& getMapDimensions();
+	
 	
 };
 
@@ -67,6 +92,7 @@ class ConfigManager {
 private:
 	std::fstream configFile;
 	std::vector<Section> configFileSections;
+	BasicDataSection basicSection;
 
 	bool is_section(const std::string& line);
 	std::string getSectionName(const std::string &line);
@@ -81,4 +107,6 @@ public:
 	void getVal(const std::string &section, const std::string &id, std::string &readData);
 	void getVal(const std::string &section, const std::string &id, double &readData);
 	void getVal(const std::string &section, const std::string &id, int &readData);
+
+	bool getBasicData(std::vector<int> &readNeuronsInLayers, std::vector<std::pair<int,int> > &readMapDims );
 };

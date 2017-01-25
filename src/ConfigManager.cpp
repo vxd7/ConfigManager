@@ -252,6 +252,128 @@ bool Section::getToken(const std::string& tokenName, Token& readToken) {
 	return false;
 }
 
+/********************
+ * BasicDataSection *
+ * ******************/
+
+std::string BasicDataSection::getSubstringBetweenBraces(std::string line) {
+	std::string result;
+	
+	size_t outerCurlyBraceOpen = line.find_first_of('{');
+	size_t outerCurlyBraceClose = line.find_last_of('}');
+	size_t numberOfCharacters = outerCurlyBraceClose - outerCurlyBraceOpen - 1;
+
+	//TODO: debug substr cutting
+	result= line.substr(outerCurlyBraceOpen + 1, numberOfCharacters);
+
+	return result;
+}
+std::vector<int> BasicDataSection::getNumbersInCurlyBraces(std::string line) {
+	std::vector<int> result;
+
+	line = getSubstringBetweenBraces(line);
+
+	std::istringstream iss(line);
+	std::string token;
+	while(std::getline(iss, token, ',')) {
+		// TODO: add checking for token validity
+		int convertedToken = std::stoi(token);
+		result.push_back(convertedToken);
+	}
+
+	return result;
+
+}
+bool BasicDataSection::init_neuronsInLayers(std::string line) {
+	//neuronsInLayers = {1, 2, 3, 4}
+	
+	size_t outerCurlyBraceOpen = line.find('{');
+	size_t outerCurlyBraceClose = line.find('}');
+
+	if((outerCurlyBraceOpen == std::string::npos) 
+			|| (outerCurlyBraceClose == std::string::npos)) {
+		return false;
+	}
+
+	neuronsInLayers = getNumbersInCurlyBraces(line);
+
+	return true;
+}
+bool BasicDataSection::init_mapDims(std::string line) {
+	//mapDims = {{1, 2}, {4, 5}, {7, 8}}
+
+	size_t outerCurlyBraceOpen = line.find_first_of('{');
+	size_t outerCurlyBraceClose = line.find_last_of('}');
+
+	if((outerCurlyBraceOpen == std::string::npos) 
+			|| (outerCurlyBraceClose == std::string::npos)) {
+		return false;
+	}
+	
+	line = getSubstringBetweenBraces(line);
+	std::istringstream iss(line);
+
+	std::string token;
+	size_t curlyBraceOpen = line.find_first_of('{');
+	size_t curlyBraceClose = line.find_first_of('}');
+	bool substringsPresent = true;
+	while(substringsPresent) {
+		size_t substrBracesLen = curlyBraceClose - curlyBraceOpen + 1;
+		std::string substrInBraces = line.substr(curlyBraceOpen, substrBracesLen);
+		line.erase(curlyBraceOpen, substrBracesLen);
+
+		std::vector<int> vec = getNumbersInCurlyBraces(substrInBraces);
+		int firstNum = *(vec.begin());
+		int secNum = *(vec.rbegin());
+
+		std::pair<int, int> myPair = std::make_pair(firstNum, secNum);
+		mapDims.push_back(myPair);
+
+		curlyBraceOpen = line.find_first_of('{');
+		curlyBraceClose = line.find_first_of('}');
+
+		if((curlyBraceOpen == std::string::npos) || 
+				(curlyBraceClose == std::string::npos)) {
+			substringsPresent = false;
+		}
+	}
+
+	return true;
+	
+}
+void BasicDataSection::readBasicDataSection(std::stringstream& sstr) {
+	std::string line;
+	bool success = true;
+	while(sstr.good()) {
+		std::getline(sstr, line, '\n'); // Get the stringstream contents line-by-line
+
+		if(line.find("neuronsInLayers") != std::string::npos) {
+			bool success_read = init_neuronsInLayers(line);
+
+			if(!success_read) {
+				success = false;
+			}
+		} else if(line.find("mapDims") != std::string::npos) {
+			bool success_read = init_mapDims(line);
+
+			if(!success_read) {
+				success = false;
+			}
+		}
+	}
+
+	if(success) {
+		section_full_init = true;
+	}
+}
+
+std::vector<int>& BasicDataSection::getNeuronsInLayers() {
+	return neuronsInLayers;
+}
+std::vector<std::pair<int,int>>& BasicDataSection::getMapDimensions() {
+	return mapDims;
+}
+
 /***************************
  * ConfigManager funcitons *
  * *************************/
@@ -299,9 +421,14 @@ void ConfigManager::readConfigFile(const std::string &fileName) {
 				}
 			}
 
-			Section tmpSect;
-			tmpSect.readSection(sectionName, sstr);
-			configFileSections.push_back(tmpSect);
+			if(sectionName == "main") {
+				basicSection.readBasicDataSection(sstr);
+				
+			} else {
+				Section tmpSect;
+				tmpSect.readSection(sectionName, sstr);
+				configFileSections.push_back(tmpSect);
+			}
 
 		} else {
 			/* If it is not a section and we are not inside a section,
@@ -369,5 +496,16 @@ void ConfigManager::getVal(const std::string &section, const std::string &id, in
 		//exception here
 	} else {
 		foundToken.getTokenData(readData);
+	}
+}
+
+bool ConfigManager::getBasicData(std::vector<int> &readNeuronsInLayers, std::vector<std::pair<int,int> > &readMapDims ) {
+	readNeuronsInLayers = basicSection.getNeuronsInLayers();
+	readMapDims = basicSection.getMapDimensions();
+
+	if(basicSection.section_full_init) {
+		return true;
+	} else {
+		return false;
 	}
 }
