@@ -1,4 +1,4 @@
-#include "ConfigMgr.h"
+#include "ConfigManager.h"
 
 #include <fstream>
 #include <string>
