@@ -241,6 +241,18 @@ void Section::readSection(const std::string& sectionName, std::stringstream& sst
 	}
 }
 
+/* Check if token is here */
+bool Section::isTokenPresent(const std::string& tokenName) {
+	for(size_t i = 0; i < sectionTokens.size(); ++i) {
+		if(sectionTokens[i].getTokenID() == tokenName) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Check if token is here AND GET IT */
 bool Section::getToken(const std::string& tokenName, Token& readToken) {
 	for(size_t i = 0; i < sectionTokens.size(); ++i) {
 		if(sectionTokens[i].getTokenID() == tokenName) {
@@ -391,6 +403,22 @@ std::string ConfigManager::getSectionName(const std::string &line) {
 	sectionName = line.substr(1, (sectionEndIndex - 1));
 
 	return sectionName;
+}
+
+bool ConfigManager::isTokenPresent(const std::string &section, const std::string &tokenName) {
+	int sectionIndex = getSectionIndex(section);
+
+	if(sectionIndex == -1) {
+		return false;
+	}
+
+	bool tokenPresent = configFileSections[sectionIndex].isTokenPresent(tokenName);
+
+	if(tokenPresent) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void ConfigManager::readConfigFile(const std::string &fileName) {

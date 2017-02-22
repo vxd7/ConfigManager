@@ -57,6 +57,8 @@ private:
 public:
 	std::string getSectionName();
 	void readSection(const std::string& sectionName, std::stringstream& sstr);
+
+	bool isTokenPresent(const std::string& tokenName);
 	bool getToken(const std::string& tokenName, Token& readToken);
 	
 };
@@ -101,6 +103,8 @@ private:
 	bool searchToken(const std::string &section, const std::string &tokenName, Token& readToken);
 
 public:
+
+	bool isTokenPresent(const std::string &section, const std::string &tokenName);
 
 	void readConfigFile(const std::string &fileName);
 
