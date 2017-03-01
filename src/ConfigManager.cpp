@@ -6,6 +6,22 @@
 
 #include <algorithm>
 #include <cctype>
+#include <exception>
+
+class TokenNotFound : public std::exception {
+	std::string _message;
+public:
+	const char* what() const throw() {
+		return _message.c_str();
+	}
+
+	TokenNotFound() :
+		_message("Config token not found") {}
+
+	TokenNotFound(std::string message) :
+		_message(message) {}
+	
+};
 
 /*******************
  * TOKEN FUNCTIONS *
@@ -480,17 +496,21 @@ size_t ConfigManager::getSectionIndex(std::string sectionName) {
 bool ConfigManager::searchToken(const std::string &section, const std::string &tokenName, Token& readToken) {
 	size_t findSectionIndex = getSectionIndex(section);
 
-	/* Not found */
+	/* Check whether section is correct */
 	if(findSectionIndex == -1) {
 		return false;
 	}
 
 	Token foundToken;
-	configFileSections[findSectionIndex].getToken(tokenName, foundToken);
+
+	/* Check whether token name is correct */
+	bool isTokenFound = configFileSections[findSectionIndex].getToken(tokenName, foundToken);
+	if(!isTokenFound) {
+		return false;
+	}
 
 	readToken = foundToken;
 	return true;
-
 
 }
 
@@ -499,7 +519,7 @@ void ConfigManager::getVal(const std::string &section, const std::string &id, st
 	bool found = searchToken(section, id, foundToken);
 
 	if(!found) {
-		//exception here
+		throw TokenNotFound("Token `" + id + "' in section `" + section + "' not found");
 	} else {
 		foundToken.getTokenData(readData);
 	}
@@ -510,7 +530,7 @@ void ConfigManager::getVal(const std::string &section, const std::string &id, do
 	bool found = searchToken(section, id, foundToken);
 
 	if(!found) {
-		//exception here
+		throw TokenNotFound("Token `" + id + "' in section `" + section + "' not found");
 	} else {
 		foundToken.getTokenData(readData);
 	}
@@ -521,7 +541,7 @@ void ConfigManager::getVal(const std::string &section, const std::string &id, in
 	bool found = searchToken(section, id, foundToken);
 
 	if(!found) {
-		//exception here
+		throw TokenNotFound("Token `" + id + "' in section `" + section + "' not found");
 	} else {
 		foundToken.getTokenData(readData);
 	}
